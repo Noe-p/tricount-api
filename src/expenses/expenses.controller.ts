@@ -7,8 +7,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { Expense } from './expense.entity/expense.entity';
-import { ExpensesService } from './expenses.service';
+import { ExpenseDto, ExpensesService } from './expenses.service';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -25,12 +24,12 @@ export class ExpensesController {
   }
 
   @Post()
-  create(@Body() expense: Expense) {
+  create(@Body() expense: ExpenseDto) {
     return this.service.createExpense(expense);
   }
 
   @Put(':id')
-  update(@Param() params, @Body() expense: Expense) {
+  update(@Param() params, @Body() expense: ExpenseDto) {
     return this.service.updateExpense(params.id, expense);
   }
 
@@ -50,7 +49,7 @@ export class TotalAmountController {
   }
 
   @Get(':id')
-  getTotalAmountByUser(@Param() params) {
-    return this.service.getTotalAmountByUser(params.id);
+  getUserAmount(@Param() params) {
+    return this.service.getUserAmount(params.id);
   }
 }

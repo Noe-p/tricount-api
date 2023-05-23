@@ -17,4 +17,7 @@ export class Expense {
 
   @Column({ length: 50 })
   id_category?: string;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  date: Date;
 }

@@ -4,9 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import 'reflect-metadata';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { ParticipantsModule } from './participants/participants.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ExpensesModule } from './expenses/expenses.module';
     UsersModule,
     CategoriesModule,
     ExpensesModule,
+    ParticipantsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

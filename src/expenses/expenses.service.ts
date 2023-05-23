@@ -1,38 +1,105 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ParticipantsService } from 'src/participants/participants.service';
+import { User } from 'src/users/user.entity/user.entity';
+import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import { UsersService } from './../users/users.service';
 import { Expense } from './expense.entity/expense.entity';
 
+export interface ExpenseDto extends Expense {
+  participants: string[];
+}
+
+export interface ExpenseApi extends Expense {
+  participants: User[];
+}
 @Injectable()
 export class ExpensesService {
   constructor(
     @InjectRepository(Expense) private expensesRepository: Repository<Expense>,
-    @InjectDataSource() private readonly connection: DataSource,
+    private participantService: ParticipantsService,
+    private usersService: UsersService,
   ) {}
 
-  async getExpenses(): Promise<Expense[]> {
-    return await this.expensesRepository.find();
+  async getExpenses(): Promise<ExpenseApi[]> {
+    const expenses = (await this.expensesRepository.find()).sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    );
+
+    return await Promise.all(
+      expenses.map(async (expense) => {
+        const participants = await this.participantService.getUserOfExpense(
+          expense.id,
+        );
+        return {
+          ...expense,
+          participants: await Promise.all(
+            participants.map(async (participant) => {
+              const user = await this.usersService.getUser(participant);
+              return user[0];
+            }),
+          ),
+        };
+      }),
+    );
   }
 
-  async getExpense(_id: string): Promise<Expense[]> {
-    return await this.expensesRepository.find({
-      select: ['label', 'amount', 'id_user', 'id_category', 'id'],
+  async getExpense(_id: string): Promise<ExpenseApi> {
+    const expense = await this.expensesRepository.find({
+      select: ['label', 'amount', 'id_user', 'id_category', 'id', 'date'],
       where: [{ id: _id }],
+    });
+
+    return {
+      ...expense[0],
+      participants: await Promise.all(
+        (
+          await this.participantService.getUserOfExpense(expense[0].id)
+        ).map(async (participant) => {
+          const user = await this.usersService.getUser(participant);
+          return user[0];
+        }),
+      ),
+    };
+  }
+
+  async createExpense(expense: ExpenseDto) {
+    const id = uuidv4();
+
+    await this.expensesRepository.save({
+      label: expense.label,
+      amount: expense.amount,
+      id_user: expense.id_user,
+      id_category: expense.id_category,
+      date: expense.date,
+      id: id,
+    });
+
+    expense.participants.forEach(async (participant) => {
+      await this.participantService.createParticipant(participant, id);
     });
   }
 
-  async createExpense(expense: Expense) {
-    const id = uuidv4();
-    this.expensesRepository.save({ ...expense, id: id });
+  async updateExpense(id: string, expense: ExpenseDto) {
+    await this.expensesRepository.update(id, {
+      label: expense.label,
+      amount: expense.amount,
+      id_user: expense.id_user,
+      id_category: expense.id_category,
+      date: expense.date,
+    });
+
+    await this.participantService.removeAllParticipantsByExpense(id);
+
+    expense.participants.forEach(async (participant) => {
+      await this.participantService.createParticipant(participant, id);
+    });
   }
 
-  async updateExpense(id: number, expense: Expense) {
-    this.expensesRepository.update(id, expense);
-  }
-
-  async deleteExpense(expense: Expense) {
-    this.expensesRepository.delete(expense);
+  async deleteExpense(expense_id: string) {
+    await this.participantService.removeAllParticipantsByExpense(expense_id);
+    await this.expensesRepository.delete(expense_id);
   }
 
   async getTotalAmount() {
@@ -42,11 +109,14 @@ export class ExpensesService {
       .getRawOne();
   }
 
-  async getTotalAmountByUser(id: string) {
-    return await this.expensesRepository
-      .createQueryBuilder('expense')
-      .select('SUM(expense.amount)', 'total')
-      .where('expense.id_user = :id', { id: id })
-      .getRawOne();
+  async getUserAmount(id_user: string): Promise<number> {
+    const expenses = await this.participantService.getExpenseOfUser(id_user);
+    const total = await Promise.all(
+      expenses.map(async (expense) => {
+        const exp = await this.getExpense(expense);
+        return Number(exp.amount) / exp.participants.length;
+      }),
+    );
+    return total.reduce((a, b) => a + b, 0);
   }
 }
