@@ -29,7 +29,7 @@ export class UsersService {
     this.usersRepository.save({ ...user, id: id });
   }
 
-  async updateUser(id: number, user: User) {
+  async updateUser(id: string, user: User) {
     this.usersRepository.update(id, user);
   }
 
