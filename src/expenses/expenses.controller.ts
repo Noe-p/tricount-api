@@ -48,8 +48,13 @@ export class TotalAmountController {
     return this.service.getTotalAmount();
   }
 
-  @Get(':id')
+  @Get('/users/:id')
   getUserAmount(@Param() params) {
     return this.service.getUserAmount(params.id);
+  }
+
+  @Get('/users')
+  getUsersAmount() {
+    return this.service.getUsersAmount();
   }
 }

@@ -119,4 +119,33 @@ export class ExpensesService {
     );
     return total.reduce((a, b) => a + b, 0);
   }
+
+  async getUsersAmount(): Promise<{ user: User; balance: number }[]> {
+    const users = await this.usersService.getUsers();
+    const balance = Promise.all(
+      users.map(async (user) => {
+        const expenses = await this.participantService.getExpenseOfUser(
+          user.id,
+        );
+        const total = await Promise.all(
+          expenses.map(async (expense) => {
+            const exp = await this.getExpense(expense);
+            if (exp.id_user === user.id) {
+              return (
+                Number(exp.amount) -
+                Number(exp.amount) / exp.participants.length
+              );
+            } else {
+              return -(Number(exp.amount) / exp.participants.length);
+            }
+          }),
+        );
+        return {
+          user: user,
+          balance: total.reduce((a, b) => a + b, 0),
+        };
+      }),
+    );
+    return balance;
+  }
 }
