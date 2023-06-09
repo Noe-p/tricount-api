@@ -14,6 +14,8 @@ export interface ExpenseDto extends Expense {
 export interface ExpenseApi extends Expense {
   participants: User[];
 }
+
+// Ce service est le plus important de l'application, il va nous permettre de manipuler les données de la table expenses
 @Injectable()
 export class ExpensesService {
   constructor(
@@ -22,6 +24,7 @@ export class ExpensesService {
     private usersService: UsersService,
   ) {}
 
+  // Depuis le back, on va récupérer toutes les dépenses, et pour chacune d'entre elles, on va récupérer les participants et les ajouter à l'objet expense.
   async getExpenses(): Promise<ExpenseApi[]> {
     const expenses = (await this.expensesRepository.find()).sort(
       (a, b) => b.date.getTime() - a.date.getTime(),
@@ -45,6 +48,7 @@ export class ExpensesService {
     );
   }
 
+  // Idem que pour la fonction getExpenses, mais cette fois-ci on ne récupère qu'une seule dépense.
   async getExpense(_id: string): Promise<ExpenseApi> {
     const expense = await this.expensesRepository.find({
       select: ['label', 'amount', 'id_user', 'id_category', 'id', 'date'],
@@ -64,6 +68,7 @@ export class ExpensesService {
     };
   }
 
+  // Cette fonction va nous permettre de créer une dépense, mais aussi de créer les participants associés à cette dépense.
   async createExpense(expense: ExpenseDto) {
     const id = uuidv4();
 
@@ -81,6 +86,7 @@ export class ExpensesService {
     });
   }
 
+  // Cette fonction va nous permettre de mettre à jour une dépense, mais aussi de mettre à jour les participants associés à cette dépense.
   async updateExpense(id: string, expense: ExpenseDto) {
     await this.expensesRepository.update(id, {
       label: expense.label,
@@ -97,11 +103,13 @@ export class ExpensesService {
     });
   }
 
+  // Pour supprimer une dépense, on va d'abord supprimer tous les participants associés à cette dépense, puis on supprime la dépense.
   async deleteExpense(expense_id: string) {
     await this.participantService.removeAllParticipantsByExpense(expense_id);
     await this.expensesRepository.delete(expense_id);
   }
 
+  // Cette fonction va nous permettre de récupérer le montant total des dépenses.
   async getTotalAmount() {
     return await this.expensesRepository
       .createQueryBuilder('expense')
@@ -109,6 +117,7 @@ export class ExpensesService {
       .getRawOne();
   }
 
+  // Cette fonction va nous permettre de récupérer le montant total des dépenses d'un utilisateur.
   async getUserAmount(id_user: string): Promise<number> {
     const expenses = await this.participantService.getExpenseOfUser(id_user);
     const total = await Promise.all(
@@ -120,6 +129,8 @@ export class ExpensesService {
     return total.reduce((a, b) => a + b, 0);
   }
 
+  // Cette fonction nous permet de récupérer le montant total des dépenses de tous les utilisateurs. Si le signe de "balance" est positif, cela signifie que l'utilisateur a dépensé plus qu'il n'a reçu, et inversement.
+  // Cette fonction est utilisée dans la page Équilibre du front.
   async getUsersAmount(): Promise<{ user: User; balance: number }[]> {
     const users = await this.usersService.getUsers();
     const balance = Promise.all(

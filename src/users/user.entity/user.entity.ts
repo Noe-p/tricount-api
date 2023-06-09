@@ -1,6 +1,7 @@
 export class UserEntity {}
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+// Cette classe est un model qui va nous permettre de manipuler les données de la table users
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()

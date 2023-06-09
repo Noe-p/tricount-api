@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './user.entity/user.entity';
 
+// Cette classe est un service qui va nous permettre de manipuler les données de la table users
 @Injectable()
 export class UsersService {
   constructor(

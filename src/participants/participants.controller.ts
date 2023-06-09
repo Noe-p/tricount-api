@@ -10,6 +10,8 @@ import {
 import { Participant } from './participant.entity/participant.entity';
 import { ParticipantsService } from './participants.service';
 
+// Cette classe est un controller qui va nous permettre de faire le lien entre les users et les expenses
+
 @Controller('participants')
 export class ParticipantsController {
   constructor(private service: ParticipantsService) {}

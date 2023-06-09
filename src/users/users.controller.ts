@@ -10,6 +10,7 @@ import {
 import { User } from './user.entity/user.entity';
 import { UsersService } from './users.service';
 
+// Cette classe est un controller qui va nous permettre de manipuler les données de la table users
 @Controller('users')
 export class UsersController {
   constructor(private service: UsersService) {}

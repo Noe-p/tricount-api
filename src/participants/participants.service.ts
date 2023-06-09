@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { Participant } from './participant.entity/participant.entity';
 
+// Cette classe est un service qui va nous permettre de faire le lien entre les users et les expenses
 @Injectable()
 export class ParticipantsService {
   constructor(
